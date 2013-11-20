@@ -1,0 +1,26 @@
+#! /usr/bin/perl
+
+use utf8;
+use strict;
+use warnings;
+use HTTP::Tiny;
+use feature ':5.10';
+$|++;
+
+my $ua = HTTP::Tiny->new;
+while (1) {
+say 'input word for translation:';
+my $word = <>;
+chomp $word;
+do {say 'bye~';exit 1} if lc($word) eq 'exit';
+my $resp = $ua->get('http://translate.google.cn/translate_a/t?client=t&sl=en&tl=zh-CN&hl=en&sc=2&ie=UTF-8&oe=UTF-8&oc=1&otf=2&rom=1&ssel=3&tsel=4&q='.$word);
+say '=' x 10 . 'result:' . '=' x 10;
+do{say'translate failed!';next} unless $resp->{status} =~ /^2/;
+say $resp->{content};
+say '=' x 10 . 'next turn:' . '=' x 10;
+}
+
+
+__END__
+
+http://translate.google.cn/translate_a/t?client=t&sl=en&tl=zh-CN&hl=en&sc=2&ie=UTF-8&oe=UTF-8&oc=1&otf=2&rom=1&ssel=3&tsel=4&q=hello
