@@ -3,24 +3,50 @@
 use utf8;
 use strict;
 use warnings;
+
 use HTTP::Tiny;
+use Storable;
 use URI::Encode qw/uri_encode/;
+use List::Util qw/min/;
 use feature ':5.10';
 $|++;
 my $prefix = 'http://translate.google.cn/translate_a/t?client=t&sl=en&tl=zh-CN&hl=en&sc=2&ie=UTF-8&oe=UTF-8&oc=1&otf=2&rom=1&ssel=3&tsel=4&q=';
+
+my $file = "$ENV{HOME}/.diclist";
+my $diclist = -e $file ? retrieve($file) : [];
+
+sub syn {
+    store($diclist, $file);    
+}
 
 my $ua = HTTP::Tiny->new;
 while (1) {
     say 'input word for translation:';
     my $word = <>;
     chomp $word;
-    $word = uri_encode($word);
-    do {say 'bye~';exit 1} if lc($word) eq 'exit';
-    my $resp = $ua->get($prefix.$word);
+    my $enc_word = uri_encode($word);
+
+    #exit
+    do {syn;say 'bye~';exit 1} if lc($word) eq '-exit';
+
+    #last
+    if ($word =~ /-last\s*(\d*)/) {
+       my $times = $1;
+       say "retrive". ( $times != 0 ? ('last' . $times) : ' all'). " words:";
+       say "$_: $diclist->[$_]" for 0 .. min($times||10000, scalar @{$diclist}) - 1;
+       say 'retrive end!';
+       next;
+    }
+    
+    #clear
+    do{$diclist = [];syn;say 'data cleared~~';next} if $word eq '-clear';
+
+    my $resp = $ua->get($prefix.$enc_word);
     say '=' x 10 . 'result:' . '=' x 10;
     do{say "translate failed! Code: $resp->{status}";next} unless $resp->{status} =~ /^2/;
     say $resp->{content};
     say '=' x 10 . 'next turn:' . '=' x 10;
+    push @{$diclist}, $word;
 }
 
 
